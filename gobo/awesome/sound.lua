@@ -188,10 +188,10 @@ function sound.new(card, channel)
          end
       end),
       awful.button({ }, 4, function()
-         widget:set_volume(5, "-")
+         widget:set_volume(5, "+")
       end),
       awful.button({ }, 5, function()
-         widget:set_volume(5, "+")
+         widget:set_volume(5, "-")
       end)
    ))
    update(state, config)
