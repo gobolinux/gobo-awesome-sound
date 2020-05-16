@@ -1,17 +1,13 @@
 
 local sound = {}
 
-local icon_theme = require("menubar.icon_theme")
 local awful = require("awful")
-local beautiful = require("beautiful")
 local wibox = require("wibox")
 local gears = require("gears")
 local timer = gears.timer or timer
-local naughty = require("naughty")
 local lgi = require("lgi")
 local cairo = lgi.require("cairo")
-
-local icons = icon_theme.new()
+local mouse = mouse
 
 local function pread(cmd)
    local pd = io.popen(cmd, "r")
@@ -24,19 +20,21 @@ local function pread(cmd)
 end
 
 local function update_state(state, output)
-   local volume = output:match("%[([0-9.,]*)%%%]")
-   local mute = output:match("%[([onf]*)%]")
+   local sink = output:match("%* index: ([0-9]*)")
+   local volume = output:match("volume: front.-([0-9]*)%%")
+   local mute = output:match("muted: ([yesno]*)")
    if not (volume and mute) then
       state.valid = false
       return
    end
+   state.sink = sink
    state.valid = true
-   state.volume = tonumber(volume)
-   state.mute = (mute == "off")
+   state.volume = tonumber(volume) or 0
+   state.mute = (mute == "yes")
 end
 
-local function update(state, config)
-   update_state(state, pread("amixer -M -c "..config.card.." -- get '"..config.channel.."' playback"))
+local function update(state)
+   update_state(state, pread("pacmd list-sinks"))
 end
 
 local function draw_handle(surface, volume)
@@ -135,12 +133,8 @@ local function update_icon(widget, state)
    widget:set_image(image)
 end
 
-function sound.new(card, channel)
+function sound.new()
    local widget = wibox.widget.imagebox()
-   local config = {
-      card = card or 0,
-      channel = channel or "Master"
-   }
    local state = {
       valid = false,
       volume = 0,
@@ -148,20 +142,25 @@ function sound.new(card, channel)
    }
 
    widget.set_volume = function (self, val, delta)
-      local setting = val.."%"..delta
-      update_state(state, pread("amixer -M -c "..config.card.." -- set '"..config.channel.."' playback "..setting))
+      local volume = state.volume
+      if delta == "+" then
+         volume = math.min(volume + val, 100)
+      elseif delta == "-" then
+         volume = math.max(0, volume - val)
+      end
+      update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
       update_icon(self, state)
    end
    
    widget.toggle_mute = function(self)
-      local setting = state.mute and "on" or "off"
-      update_state(state, pread("amixer -M -c "..config.card.." -- set '"..config.channel.."' mute "..setting))
+      local setting = state.mute and "no" or "yes"
+      update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
       update_icon(self, state)
    end
 
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
-      update(state, config)
+      update(state)
       update_icon(widget, state)
    end)
    widget_timer:start()
@@ -173,15 +172,16 @@ function sound.new(card, channel)
          local x = mouse.screen.geometry.width - 800
          local y = 24
          local killed = false
-         for c in awful.client.iterate(function (c) return c.name == "alsamixer" end, nil, mouse.screen) do
+         for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
             c:kill()
             killed = true
          end
          if not killed then
-            awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' --color15 '#ddd' -b 0 +sb -e alsamixer") -- or whatever your preferred sound mixer is
-            local t = timer.start_new(0.3, function()
-               for c in awful.client.iterate(function (c) return c.name == "alsamixer" end, nil, mouse.screen) do
-                  c:connect_signal("unfocus", function(c) c:kill() end)
+            awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -title ncpamixer -cr green -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
+            local t
+            t = timer.start_new(0.3, function()
+               for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
+                  c:connect_signal("unfocus", function(cl) cl:kill() end)
                end
                t:stop()
             end)
@@ -194,9 +194,9 @@ function sound.new(card, channel)
          widget:set_volume(5, "-")
       end)
    ))
-   update(state, config)
+   update(state)
    update_icon(widget, state)
-   widget:connect_signal("mouse::enter", function() update(state, config) end)
+   widget:connect_signal("mouse::enter", function() update(state) end)
    return widget
 end
 
