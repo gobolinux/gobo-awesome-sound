@@ -1,8 +1,8 @@
 package = "gobo-awesome-sound"
-version = "0.2-1"
+version = "0.3-1"
 source = {
    url = "git+https://github.com/gobolinux/gobo-awesome-sound.git",
-   tag = "0.2",
+   tag = "0.3",
 }
 description = {
    detailed = "An ALSA sound widget for Awesome WM, designed for [http://gobolinux.org](GoboLinux).",
