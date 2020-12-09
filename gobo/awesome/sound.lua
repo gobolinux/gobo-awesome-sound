@@ -10,7 +10,7 @@ local cairo = lgi.require("cairo")
 local mouse = mouse
 
 local function pread(cmd)
-   local pd = io.popen(cmd, "r")
+   local pd = io.popen("LANG=C " .. cmd, "r")
    if not pd then
       return ""
    end
@@ -20,17 +20,29 @@ local function pread(cmd)
 end
 
 local function update_state(state, output)
-   local sink = output:match("%* index: ([0-9]*)")
-   local volume = output:match("volume: front.-([0-9]*)%%")
-   local mute = output:match("muted: ([yesno]*)")
-   if not (volume and mute) then
+   local active = false
+   state.volume = 0
+   state.mute = false
+   for line in output:gmatch("[^\n]+") do
+      local k, v = line:match("^%s*([^:]*): (.*)")
+      if k == "index" then
+         active = false
+      elseif k == "* index" then
+         active = true
+         state.sink = v
+      elseif active then
+         if k == "volume" then
+            local percent = v:match("front.-([0-9]*)%%")
+            state.volume = tonumber(percent) or 0
+         elseif k == "muted" then
+            state.mute = (v == "yes")
+         end
+      end
+   end
+   if not (state.sink and state.volume) then
       state.valid = false
       return
    end
-   state.sink = sink
-   state.valid = true
-   state.volume = tonumber(volume) or 0
-   state.mute = (mute == "yes")
 end
 
 local function update(state)
@@ -177,7 +189,7 @@ function sound.new()
             killed = true
          end
          if not killed then
-            awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -title ncpamixer -cr green -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
+            awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title ncpamixer -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
             local t
             t = timer.start_new(0.3, function()
                for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
