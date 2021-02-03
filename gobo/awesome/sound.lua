@@ -77,7 +77,7 @@ local function draw_lights(surface, state)
 
    cr:translate(50, 50)
    cr:rotate(math.rad(-90))
-   
+
    local stop = state.mute and 100 or state.volume
    local r = stop < 50 and ((50 - stop) / 50) * -135
                                 or ((stop - 50) / 50) * 135
@@ -116,7 +116,7 @@ local function draw_lights(surface, state)
       cr:arc(0, -40, 4, 0, math.rad(360))
       cr:set_matrix(ctm)
       cr:fill()
-      
+
    end
    ]]
 end
@@ -134,7 +134,7 @@ local function draw_icon(surface, state)
    cr:fill()
 
    draw_lights(surface, state)
-   
+
    draw_handle(surface, state.volume)
 
 end
@@ -163,7 +163,7 @@ function sound.new()
       update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
       update_icon(self, state)
    end
-   
+
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
       update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
@@ -189,7 +189,11 @@ function sound.new()
             killed = true
          end
          if not killed then
-            awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title ncpamixer -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
+					 if (terminal == "urxvt") then
+							awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title ncpamixer -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
+						else
+							awful.util.spawn(terminal.." -g 100x20+"..x.."+"..y.." -T ncpamixer -e ncpamixer")
+						end
             local t
             t = timer.start_new(0.3, function()
                for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
@@ -213,4 +217,3 @@ function sound.new()
 end
 
 return sound
-
