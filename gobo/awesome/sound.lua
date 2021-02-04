@@ -170,6 +170,7 @@ function sound.new()
       update_icon(self, state)
    end
 
+	 local mixer = "ncpamixer"
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
       update(state)
@@ -184,19 +185,19 @@ function sound.new()
          local x = mouse.screen.geometry.width - 800
          local y = 24
          local killed = false
-         for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
+         for c in awful.client.iterate(function (c) return c.name == ""..mixer.."" end, nil, mouse.screen) do
             c:kill()
             killed = true
          end
          if not killed then
 					 if (terminal == "urxvt") then
-							awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title ncpamixer -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e ncpamixer") -- or whatever your preferred sound mixer is
+							awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title "..mixer.." -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e "..mixer.."") -- or whatever your preferred sound mixer is
 						else
-							awful.util.spawn(terminal.." -g 100x20+"..x.."+"..y.." -T ncpamixer -e ncpamixer")
+							awful.util.spawn(terminal.." -g 100x20+"..x.."+"..y.." -T "..mixer.." -e "..mixer.."")
 						end
             local t
             t = timer.start_new(0.3, function()
-               for c in awful.client.iterate(function (c) return c.name == "ncpamixer" end, nil, mouse.screen) do
+               for c in awful.client.iterate(function (c) return c.name == ""..mixer.."" end, nil, mouse.screen) do
                   c:connect_signal("unfocus", function(cl) cl:kill() end)
                end
                t:stop()
