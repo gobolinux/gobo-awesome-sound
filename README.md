@@ -27,6 +27,12 @@ Create the widget with `sound.new()`:
 local sound_widget = sound.new()
 ```
 
+You can use a different terminal mixer
+
+```lua
+local sound_widget = sound.new({mixer="pulsemixer"})
+```
+
 Then add it to your layout.
 In a typical `rc.lua` this will look like this:
 
@@ -48,4 +54,3 @@ Additionally, add keybindings for your multimedia keys:
       {description = "Toggle mute", group = "multimedia"}
    ),
 ```
-
