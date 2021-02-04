@@ -145,7 +145,9 @@ local function update_icon(widget, state)
    widget:set_image(image)
 end
 
-function sound.new()
+function sound.new(options)
+	 local mixer = options.mixer or "ncpamixer"
+
    local widget = wibox.widget.imagebox()
    local state = {
       valid = false,
@@ -170,9 +172,6 @@ function sound.new()
       update_icon(self, state)
    end
 
-	 if (mixer == nil) then
-		 mixer = "ncpamixer"
-	 end
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
       update(state)
