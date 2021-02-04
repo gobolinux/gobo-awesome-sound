@@ -1,15 +1,15 @@
 gobo-awesome-sound
 ==================
 
-An ALSA sound widget for Awesome WM, designed for [http://gobolinux.org](GoboLinux).
+A Pulseaudio sound widget for Awesome WM, designed for [http://gobolinux.org](GoboLinux).
 
 Requirements
 ------------
 
 * Awesome 3.5+
-* `amixer` (from alsa-utils)
-* `alsamixer` and `urxvt` for mixer pop-up
-* `lode-fonts` for a nice-looking mixer pop-up :-)
+* ~~`amixer` (from alsa-utils)~~ `pulseaudio`
+* ~~`alsamixer`~~ ncpamixer (you can use other terminal based pulse mixers) and `urxvt` (will use your default terminal if it aint urxvt) for mixer pop-up
+* `lode-fonts` for a nice-looking mixer pop-up :-) (only used with urxvt)
 
 Using
 -----
@@ -17,13 +17,13 @@ Using
 Require the module:
 
 
-```
+```lua
 local sound = require("gobo.awesome.sound")
 ```
 
 Create the widget with `sound.new()`:
 
-```
+```lua
 local sound_widget = sound.new()
 ```
 
@@ -37,13 +37,13 @@ Then add it to your layout.
 In a typical `rc.lua` this will look like this:
 
 
-```
+```lua
 right_layout:add(sound.new())
 ```
 
 Additionally, add keybindings for your multimedia keys:
 
-```
+```lua
    awful.key({ }, "XF86AudioRaiseVolume", function() sound_widget:set_volume(5, "+") end,
       {description = "Raise audio volume", group = "multimedia"}
    ),
