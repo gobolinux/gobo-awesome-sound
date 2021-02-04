@@ -170,7 +170,9 @@ function sound.new()
       update_icon(self, state)
    end
 
-	 local mixer = "ncpamixer"
+	 if (mixer == nil) then
+		 mixer = "ncpamixer"
+	 end
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
       update(state)
