@@ -186,7 +186,7 @@ function sound.new(options)
          local x = mouse.screen.geometry.width - 800
          local y = 24
          local killed = false
-         for c in awful.client.iterate(function (c) return c.name == ""..mixer.."" end, nil, mouse.screen) do
+         for c in awful.client.iterate(function (c) return c.name == mixer end, nil, mouse.screen) do
             c:kill()
             killed = true
          end
