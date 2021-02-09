@@ -8,7 +8,7 @@ Requirements
 
 * Awesome 3.5+
 * PulseAudio
-* ~~`alsamixer`~~ ncpamixer (you can use other terminal based pulse mixers) and `urxvt` (will use your default terminal if it aint urxvt) for mixer pop-up
+* a terminal-based PulseAudio mixer (`ncpamixer` by default) and a terminal (`urxvt` by default)
 * `lode-fonts` for a nice-looking mixer pop-up :-) (only used with urxvt)
 
 Using
