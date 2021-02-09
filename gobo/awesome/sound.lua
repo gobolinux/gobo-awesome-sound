@@ -198,7 +198,7 @@ function sound.new(options)
 						end
             local t
             t = timer.start_new(0.3, function()
-               for c in awful.client.iterate(function (c) return c.name == ""..mixer.."" end, nil, mouse.screen) do
+               for c in awful.client.iterate(function (c) return c.name == mixer end, nil, mouse.screen) do
                   c:connect_signal("unfocus", function(cl) cl:kill() end)
                end
                t:stop()
