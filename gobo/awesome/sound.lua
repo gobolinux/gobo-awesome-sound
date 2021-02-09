@@ -147,7 +147,7 @@ end
 
 function sound.new(options)
    local mixer = options and options.mixer or "ncpamixer"
-   local popup_terminal = options and options.terminal or terminal or "urxvt"
+   local terminal = options and options.terminal or "urxvt"
 
    local widget = wibox.widget.imagebox()
    local state = {
@@ -192,10 +192,10 @@ function sound.new(options)
             killed = true
          end
          if not killed then
-            if (popup_terminal == "urxvt") then
+            if (terminal == "urxvt") then
                awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title "..mixer.." -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e "..mixer) -- or whatever your preferred sound mixer is
             else
-               awful.util.spawn(popup_terminal.." -g 100x20+"..x.."+"..y.." -T "..mixer.." -e "..mixer.."")
+               awful.util.spawn(terminal.." -g 100x20+"..x.."+"..y.." -T "..mixer.." -e "..mixer.."")
          end
             local t
             t = timer.start_new(0.3, function()
