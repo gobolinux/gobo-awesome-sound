@@ -33,6 +33,18 @@ You can use a different terminal mixer
 local sound_widget = sound.new({mixer="pulsemixer"})
 ```
 
+Also a different terminal
+
+```lua
+local sound_widget = sound.new({mixer="pulsemixer", terminal="xterm"})
+```
+
+If you use the global `terminal` variable on `rc.lua` you can set it like this
+
+```lua
+local sound_widget = sound.new({mixer="pulsemixer", terminal=terminal})
+```
+
 Then add it to your layout.
 In a typical `rc.lua` this will look like this:
 
@@ -54,3 +66,4 @@ Additionally, add keybindings for your multimedia keys:
       {description = "Toggle mute", group = "multimedia"}
    ),
 ```
+Note: make sure to use the correct syntax for the version of awesome you are using
