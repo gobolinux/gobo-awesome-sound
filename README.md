@@ -1,7 +1,7 @@
 gobo-awesome-sound
 ==================
 
-A Pulseaudio sound widget for Awesome WM, designed for [http://gobolinux.org](GoboLinux).
+A PulseAudio sound widget for Awesome WM, designed for [http://gobolinux.org](GoboLinux).
 
 Requirements
 ------------
