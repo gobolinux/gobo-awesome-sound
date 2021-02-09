@@ -146,7 +146,7 @@ local function update_icon(widget, state)
 end
 
 function sound.new(options)
-	 local mixer = options.mixer or "ncpamixer"
+	 local mixer = options and options.mixer or "ncpamixer"
 
    local widget = wibox.widget.imagebox()
    local state = {
