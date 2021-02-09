@@ -192,7 +192,7 @@ function sound.new(options)
          end
          if not killed then
 					 if (terminal == "urxvt") then
-							awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title "..mixer.." -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e "..mixer.."") -- or whatever your preferred sound mixer is
+							awful.util.spawn("urxvt -geometry 100x20+"..x.."+"..y.." -cr green -title "..mixer.." -fn '*-lode sans mono-*' -fb '*-lode sans mono-*' -fi '*-lode sans mono-*' -fbi '*-lode sans mono-*' -depth 32 --color0 rgba:2F00/3F00/3F00/e000 -bg rgba:2F00/3F00/3F00/e000 --color4 '#2F3F3F' --color6 '#8aa' --color11 '#2ee' --color14 '#acc' -b 0 +sb -e "..mixer) -- or whatever your preferred sound mixer is
 						else
 							awful.util.spawn(terminal.." -g 100x20+"..x.."+"..y.." -T "..mixer.." -e "..mixer.."")
 						end
