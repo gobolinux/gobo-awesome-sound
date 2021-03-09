@@ -70,9 +70,30 @@ local function draw_handle(surface, volume)
    cr:fill()
 end
 
-local function draw_lights(surface, state)
+local function darken_pixel(hex_color, start, finish)
+   darker_pixel = string.format("%x", math.floor(tonumber(string.sub(hex_color, start, finish), 16) * 0.4))
+   if (string.len(darker_pixel) < 2) then
+      darker_pixel = "0"..darker_pixel
+   end
+   return darker_pixel
+end
+
+local function darken_color(hex_color)
+   r = darken_pixel(hex_color, 2, 3)
+   g = darken_pixel(hex_color, 4, 5)
+   b = darken_pixel(hex_color, 6, 7)
+   darker_color = "#"..r..g..b
+   return darker_color
+end
+
+local function draw_lights(surface, state, options)
    local cr = cairo.Context(surface)
 
+   local arc_width = options and options.arc_width or 5
+   local arc_mute = options and options.arc_mute or "#ff0000"
+   local arc_fg = options and options.arc_fg or "#00ffff"
+   local arc_fg_darker = darken_color(arc_fg)
+   local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
    local ctm = cr:get_matrix()
 
    cr:translate(50, 50)
@@ -82,46 +103,22 @@ local function draw_lights(surface, state)
    local r = stop < 50 and ((50 - stop) / 50) * -135
                                 or ((stop - 50) / 50) * 135
 
-   cr:set_line_width(5)
+   cr:set_line_width(arc_width)
    if state.mute == true then
-      cr:set_source_rgb(1, 0, 0)
+      cr:set_source_rgb(gears.color.parse_color(arc_mute))
    else
-      cr:set_source_rgb(0, 0.4, 0.4)
+      cr:set_source_rgb(gears.color.parse_color(arc_bg))
       cr:arc(0, 0, 42, math.rad(-135), math.rad(135))
       cr:stroke()
-      cr:set_source_rgb(0, 1, 1)
+      cr:set_source_rgb(gears.color.parse_color(arc_fg))
    end
    cr:arc(0, 0, 42, math.rad(-135), math.rad(r))
    cr:stroke()
 
    cr:set_matrix(ctm)
-
-   --[[
-   for i = 0, 11 do -- it goes to eleven!
-      local stop = 99 / 11 * i
-      local r = stop < 50 and ((50 - stop) / 50) * -135
-                                   or ((stop - 50) / 50) * 135
-
-      local ctm = cr:get_matrix()
-      cr:translate(50, 50)
-      cr:rotate(math.rad(r))
-
-      if state.mute == true then
-         cr:set_source_rgb(1, 0, 0)
-      elseif state.volume > stop then
-         cr:set_source_rgb(0, 1, 1)
-      else
-         cr:set_source_rgb(0, 0.1, 0.1)
-      end
-      cr:arc(0, -40, 4, 0, math.rad(360))
-      cr:set_matrix(ctm)
-      cr:fill()
-
-   end
-   ]]
 end
 
-local function draw_icon(surface, state)
+local function draw_icon(surface, state, options)
 
    local cr = cairo.Context(surface)
 
@@ -133,15 +130,15 @@ local function draw_icon(surface, state)
    cr:arc(50, 50, 30, 0, math.rad(360))
    cr:fill()
 
-   draw_lights(surface, state)
+   draw_lights(surface, state, options)
 
    draw_handle(surface, state.volume)
 
 end
 
-local function update_icon(widget, state)
+local function update_icon(widget, state, options)
    local image = cairo.ImageSurface("ARGB32", 100, 100)
-   draw_icon(image, state)
+   draw_icon(image, state, options)
    widget:set_image(image)
 end
 
@@ -164,19 +161,19 @@ function sound.new(options)
          volume = math.max(0, volume - val)
       end
       update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
-      update_icon(self, state)
+      update_icon(self, state, options)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
       update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
-      update_icon(self, state)
+      update_icon(self, state, options)
    end
 
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
       update(state)
-      update_icon(widget, state)
+      update_icon(widget, state, options)
    end)
    widget_timer:start()
    widget:buttons(awful.util.table.join(
@@ -214,7 +211,7 @@ function sound.new(options)
       end)
    ))
    update(state)
-   update_icon(widget, state)
+   update_icon(widget, state, options)
    widget:connect_signal("mouse::enter", function() update(state) end)
    return widget
 end
