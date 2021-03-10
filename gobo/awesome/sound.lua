@@ -86,14 +86,9 @@ local function darken_color(hex_color)
    return darker_color
 end
 
-local function draw_lights(surface, state, options)
+local function draw_lights(surface, state)
    local cr = cairo.Context(surface)
 
-   local arc_width = options and options.arc_width or 5
-   local arc_mute = options and options.arc_mute or "#ff0000"
-   local arc_fg = options and options.arc_fg or "#00ffff"
-   local arc_fg_darker = darken_color(arc_fg)
-   local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
    local ctm = cr:get_matrix()
 
    cr:translate(50, 50)
@@ -103,14 +98,14 @@ local function draw_lights(surface, state, options)
    local r = stop < 50 and ((50 - stop) / 50) * -135
                                 or ((stop - 50) / 50) * 135
 
-   cr:set_line_width(arc_width)
+   cr:set_line_width(state.width)
    if state.mute == true then
-      cr:set_source_rgb(gears.color.parse_color(arc_mute))
+      cr:set_source_rgb(state.color_mute[1], state.color_mute[2], state.color_mute[3])
    else
-      cr:set_source_rgb(gears.color.parse_color(arc_bg))
+      cr:set_source_rgb(state.color_bg[1], state.color_bg[2], state.color_bg[3])
       cr:arc(0, 0, 42, math.rad(-135), math.rad(135))
       cr:stroke()
-      cr:set_source_rgb(gears.color.parse_color(arc_fg))
+      cr:set_source_rgb(state.color_fg[1], state.color_fg[2], state.color_fg[3])
    end
    cr:arc(0, 0, 42, math.rad(-135), math.rad(r))
    cr:stroke()
@@ -118,7 +113,7 @@ local function draw_lights(surface, state, options)
    cr:set_matrix(ctm)
 end
 
-local function draw_icon(surface, state, options)
+local function draw_icon(surface, state)
 
    local cr = cairo.Context(surface)
 
@@ -130,27 +125,35 @@ local function draw_icon(surface, state, options)
    cr:arc(50, 50, 30, 0, math.rad(360))
    cr:fill()
 
-   draw_lights(surface, state, options)
+   draw_lights(surface, state)
 
    draw_handle(surface, state.volume)
 
 end
 
-local function update_icon(widget, state, options)
+local function update_icon(widget, state)
    local image = cairo.ImageSurface("ARGB32", 100, 100)
-   draw_icon(image, state, options)
+   draw_icon(image, state)
    widget:set_image(image)
 end
 
 function sound.new(options)
    local mixer = options and options.mixer or "ncpamixer"
    local terminal = options and options.terminal or "urxvt"
+   local arc_mute = options and options.arc_mute or "#ff0000"
+   local arc_fg = options and options.arc_fg or "#00ffff"
+   local arc_fg_darker = darken_color(arc_fg)
+   local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
 
    local widget = wibox.widget.imagebox()
    local state = {
       valid = false,
       volume = 0,
-      mute = false
+      mute = false,
+      width = options and options.arc_width or 5,
+      color_mute = { gears.color.parse_color(arc_mute) },
+      color_fg = { gears.color.parse_color(arc_fg) },
+      color_bg = { gears.color.parse_color(arc_bg) }
    }
 
    widget.set_volume = function (self, val, delta)
@@ -161,19 +164,19 @@ function sound.new(options)
          volume = math.max(0, volume - val)
       end
       update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
-      update_icon(self, state, options)
+      update_icon(self, state)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
       update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
-      update_icon(self, state, options)
+      update_icon(self, state)
    end
 
    local widget_timer = timer({timeout=5})
    widget_timer:connect_signal("timeout", function()
       update(state)
-      update_icon(widget, state, options)
+      update_icon(widget, state)
    end)
    widget_timer:start()
    widget:buttons(awful.util.table.join(
@@ -211,7 +214,7 @@ function sound.new(options)
       end)
    ))
    update(state)
-   update_icon(widget, state, options)
+   update_icon(widget, state)
    widget:connect_signal("mouse::enter", function() update(state) end)
    return widget
 end
