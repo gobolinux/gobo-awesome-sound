@@ -70,6 +70,22 @@ local function draw_handle(surface, volume)
    cr:fill()
 end
 
+local function darken_pixel(hex_color, start, finish)
+   darker_pixel = string.format("%x", math.floor(tonumber(string.sub(hex_color, start, finish), 16) * 0.4))
+   if (string.len(darker_pixel) < 2) then
+      darker_pixel = "0"..darker_pixel
+   end
+   return darker_pixel
+end
+
+local function darken_color(hex_color)
+   r = darken_pixel(hex_color, 2, 3)
+   g = darken_pixel(hex_color, 4, 5)
+   b = darken_pixel(hex_color, 6, 7)
+   darker_color = "#"..r..g..b
+   return darker_color
+end
+
 local function draw_lights(surface, state)
    local cr = cairo.Context(surface)
 
@@ -82,43 +98,19 @@ local function draw_lights(surface, state)
    local r = stop < 50 and ((50 - stop) / 50) * -135
                                 or ((stop - 50) / 50) * 135
 
-   cr:set_line_width(5)
+   cr:set_line_width(state.width)
    if state.mute == true then
-      cr:set_source_rgb(1, 0, 0)
+      cr:set_source_rgb(state.color_mute[1], state.color_mute[2], state.color_mute[3])
    else
-      cr:set_source_rgb(0, 0.4, 0.4)
+      cr:set_source_rgb(state.color_bg[1], state.color_bg[2], state.color_bg[3])
       cr:arc(0, 0, 42, math.rad(-135), math.rad(135))
       cr:stroke()
-      cr:set_source_rgb(0, 1, 1)
+      cr:set_source_rgb(state.color_fg[1], state.color_fg[2], state.color_fg[3])
    end
    cr:arc(0, 0, 42, math.rad(-135), math.rad(r))
    cr:stroke()
 
    cr:set_matrix(ctm)
-
-   --[[
-   for i = 0, 11 do -- it goes to eleven!
-      local stop = 99 / 11 * i
-      local r = stop < 50 and ((50 - stop) / 50) * -135
-                                   or ((stop - 50) / 50) * 135
-
-      local ctm = cr:get_matrix()
-      cr:translate(50, 50)
-      cr:rotate(math.rad(r))
-
-      if state.mute == true then
-         cr:set_source_rgb(1, 0, 0)
-      elseif state.volume > stop then
-         cr:set_source_rgb(0, 1, 1)
-      else
-         cr:set_source_rgb(0, 0.1, 0.1)
-      end
-      cr:arc(0, -40, 4, 0, math.rad(360))
-      cr:set_matrix(ctm)
-      cr:fill()
-
-   end
-   ]]
 end
 
 local function draw_icon(surface, state)
@@ -148,12 +140,20 @@ end
 function sound.new(options)
    local mixer = options and options.mixer or "ncpamixer"
    local terminal = options and options.terminal or "urxvt"
+   local arc_mute = options and options.arc_mute or "#ff0000"
+   local arc_fg = options and options.arc_fg or "#00ffff"
+   local arc_fg_darker = darken_color(arc_fg)
+   local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
 
    local widget = wibox.widget.imagebox()
    local state = {
       valid = false,
       volume = 0,
-      mute = false
+      mute = false,
+      width = options and options.arc_width or 5,
+      color_mute = { gears.color.parse_color(arc_mute) },
+      color_fg = { gears.color.parse_color(arc_fg) },
+      color_bg = { gears.color.parse_color(arc_bg) }
    }
 
    widget.set_volume = function (self, val, delta)
