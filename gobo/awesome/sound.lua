@@ -46,7 +46,7 @@ local function update_state(state, output)
 end
 
 local function update(state)
-   update_state(state, pread("pacmd list-sinks"))
+   update_state(state, pread("pacmd list-" .. state.device .. "s"))
 end
 
 local function draw_handle(surface, volume)
@@ -144,6 +144,15 @@ function sound.new(options)
    local arc_fg = options and options.arc_fg or "#00ffff"
    local arc_fg_darker = darken_color(arc_fg)
    local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
+   local control_source = options and options.control_source or false
+
+   local pulse_device = ""
+
+   if control_source then
+     pulse_device = "source"
+   else
+     pulse_device = "sink"
+   end
 
    local widget = wibox.widget.imagebox()
    local state = {
@@ -153,7 +162,8 @@ function sound.new(options)
       width = options and options.arc_width or 5,
       color_mute = { gears.color.parse_color(arc_mute) },
       color_fg = { gears.color.parse_color(arc_fg) },
-      color_bg = { gears.color.parse_color(arc_bg) }
+      color_bg = { gears.color.parse_color(arc_bg) },
+      device = pulse_device
    }
 
    widget.set_volume = function (self, val, delta)
@@ -163,13 +173,13 @@ function sound.new(options)
       elseif delta == "-" then
          volume = math.max(0, volume - val)
       end
-      update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
+      update_state(state, pread("pactl set-" .. state.device .. "-volume " .. state.sink .. " " .. volume .. "%; pacmd list-" .. state.device .. "s"))
       update_icon(self, state)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
-      update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
+      update_state(state, pread("pactl set-" .. state.device .. "-mute " .. state.sink .. " " .. setting .. "; pacmd list-" .. state.device .. "s"))
       update_icon(self, state)
    end
 
