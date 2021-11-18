@@ -25,28 +25,21 @@ local function update_state(state, output)
    state.mute = false
    for line in output:gmatch("[^\n]+") do
       local k, v = line:match("^%s*([^:]*): (.*)")
-      if k == "index" then
-         active = false
-      elseif k == "* index" then
-         active = true
-         state.sink = v
-      elseif active then
-         if k == "volume" then
+         if k == "Volume" then
             local percent = v:match("front.-([0-9]*)%%")
             state.volume = tonumber(percent) or 0
-         elseif k == "muted" then
+         elseif k == "Mute" then
             state.mute = (v == "yes")
          end
-      end
    end
-   if not (state.sink and state.volume) then
+   if not (state.volume) then
       state.valid = false
       return
    end
 end
 
 local function update(state)
-   update_state(state, pread("pacmd list-" .. state.device .. "s"))
+   update_state(state, pread(state.update_cmd))
 end
 
 local function draw_handle(surface, volume)
@@ -149,10 +142,15 @@ function sound.new(options)
    local pulse_device = ""
 
    if control_source then
-     pulse_device = "source"
+     pulse_device = { "source", "SOURCE" }
    else
-     pulse_device = "sink"
+     pulse_device = { "sink", "SINK" }
    end
+
+   local get_vol_cmd =  "pactl get-%s-volume @DEFAULT_%s@ "
+   local get_mute_cmd = " pactl get-%s-mute @DEFAULT_%s@"
+   local set_vol_cmd =  "pactl set-%s-volume @DEFAULT_%s@ "
+   local set_mute_cmd = "pactl set-%s-mute @DEFAULT_%s@ "
 
    local widget = wibox.widget.imagebox()
    local state = {
@@ -163,8 +161,12 @@ function sound.new(options)
       color_mute = { gears.color.parse_color(arc_mute) },
       color_fg = { gears.color.parse_color(arc_fg) },
       color_bg = { gears.color.parse_color(arc_bg) },
-      device = pulse_device
+      device = pulse_device,
+      update_cmd = string.format(get_vol_cmd, pulse_device[1], pulse_device[2]) .. ";" .. string.format(get_mute_cmd, pulse_device[1], pulse_device[2]),
+      vol_cmd = string.format(set_vol_cmd, pulse_device[1], pulse_device[2]),
+      mute_cmd = string.format(set_mute_cmd, pulse_device[1], pulse_device[2])
    }
+
 
    widget.set_volume = function (self, val, delta)
       local volume = state.volume
@@ -173,13 +175,13 @@ function sound.new(options)
       elseif delta == "-" then
          volume = math.max(0, volume - val)
       end
-      update_state(state, pread("pactl set-" .. state.device .. "-volume " .. state.sink .. " " .. volume .. "%; pacmd list-" .. state.device .. "s"))
+      update_state(state, pread( state.vol_cmd .. volume .. "% ; " .. state.update_cmd))
       update_icon(self, state)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
-      update_state(state, pread("pactl set-" .. state.device .. "-mute " .. state.sink .. " " .. setting .. "; pacmd list-" .. state.device .. "s"))
+      update_state(state, pread( state.mute_cmd .. setting .. " ; " .. state.update_cmd))
       update_icon(self, state)
    end
 
