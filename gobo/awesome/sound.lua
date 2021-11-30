@@ -160,13 +160,17 @@ function sound.new()
       elseif delta == "-" then
          volume = math.max(0, volume - val)
       end
-      update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
+      if state.sink then
+         update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
+      end
       update_icon(self, state)
    end
    
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
-      update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
+      if state.sink then
+         update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
+      end
       update_icon(self, state)
    end
 
