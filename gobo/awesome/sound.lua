@@ -21,8 +21,6 @@ end
 
 local function update_state(state, output)
    local active = false
-   state.volume = 0
-   state.mute = false
    for line in output:gmatch("[^\n]+") do
       local k, v = line:match("^%s*([^:]*): (.*)")
          if k == "Volume" then
@@ -39,7 +37,7 @@ local function update_state(state, output)
 end
 
 local function update(state)
-   update_state(state, pread(state.update_cmd))
+   update_state(state, pread(state.get_vol_cmd .. " ; " .. state.get_mute_cmd))
 end
 
 local function draw_handle(surface, volume)
@@ -162,9 +160,10 @@ function sound.new(options)
       color_fg = { gears.color.parse_color(arc_fg) },
       color_bg = { gears.color.parse_color(arc_bg) },
       device = pulse_device,
-      update_cmd = string.format(get_vol_cmd, pulse_device[1], pulse_device[2]) .. ";" .. string.format(get_mute_cmd, pulse_device[1], pulse_device[2]),
-      vol_cmd = string.format(set_vol_cmd, pulse_device[1], pulse_device[2]),
-      mute_cmd = string.format(set_mute_cmd, pulse_device[1], pulse_device[2])
+      get_vol_cmd  = string.format(get_vol_cmd,  pulse_device[1], pulse_device[2]),
+      get_mute_cmd = string.format(get_mute_cmd, pulse_device[1], pulse_device[2]),
+      set_vol_cmd  = string.format(set_vol_cmd,  pulse_device[1], pulse_device[2]),
+      set_mute_cmd = string.format(set_mute_cmd, pulse_device[1], pulse_device[2])
    }
 
 
@@ -175,13 +174,13 @@ function sound.new(options)
       elseif delta == "-" then
          volume = math.max(0, volume - val)
       end
-      update_state(state, pread( state.vol_cmd .. volume .. "% ; " .. state.update_cmd))
+      update_state(state, pread( state.set_vol_cmd .. volume .. "% ; " .. state.get_vol_cmd))
       update_icon(self, state)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
-      update_state(state, pread( state.mute_cmd .. setting .. " ; " .. state.update_cmd))
+      update_state(state, pread( state.set_mute_cmd .. setting .. " ; " .. state.get_mute_cmd))
       update_icon(self, state)
    end
 
