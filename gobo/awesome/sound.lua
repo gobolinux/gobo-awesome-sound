@@ -135,14 +135,14 @@ function sound.new(options)
    local arc_fg = options and options.arc_fg or "#00ffff"
    local arc_fg_darker = darken_color(arc_fg)
    local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
-   local control_source = options and options.control_source or false
+   local device_type = options and options.device_type or "sink"
 
    local pulse_device = ""
 
-   if control_source then
-     pulse_device = { "source", "SOURCE" }
-   else
+   if device_type == "sink" then
      pulse_device = { "sink", "SINK" }
+   elseif device_type == "source" then
+     pulse_device = { "source", "SOURCE" }
    end
 
    local get_vol_cmd =  "pactl get-%s-volume @DEFAULT_%s@ "
