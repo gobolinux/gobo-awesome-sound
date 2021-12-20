@@ -20,7 +20,6 @@ local function pread(cmd)
 end
 
 local function update_state(state, output)
-   local active = false
    for line in output:gmatch("[^\n]+") do
       local k, v = line:match("^%s*([^:]*): (.*)")
          if k == "Volume" then
