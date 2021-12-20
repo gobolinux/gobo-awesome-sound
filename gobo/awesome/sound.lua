@@ -20,33 +20,23 @@ local function pread(cmd)
 end
 
 local function update_state(state, output)
-   local active = false
-   state.volume = 0
-   state.mute = false
    for line in output:gmatch("[^\n]+") do
       local k, v = line:match("^%s*([^:]*): (.*)")
-      if k == "index" then
-         active = false
-      elseif k == "* index" then
-         active = true
-         state.sink = v
-      elseif active then
-         if k == "volume" then
+         if k == "Volume" then
             local percent = v:match("front.-([0-9]*)%%")
             state.volume = tonumber(percent) or 0
-         elseif k == "muted" then
+         elseif k == "Mute" then
             state.mute = (v == "yes")
          end
-      end
    end
-   if not (state.sink and state.volume) then
+   if not (state.volume) then
       state.valid = false
       return
    end
 end
 
 local function update(state)
-   update_state(state, pread("pacmd list-sinks"))
+   update_state(state, pread(state.get_vol_cmd .. " ; " .. state.get_mute_cmd))
 end
 
 local function draw_handle(surface, volume)
@@ -144,6 +134,20 @@ function sound.new(options)
    local arc_fg = options and options.arc_fg or "#00ffff"
    local arc_fg_darker = darken_color(arc_fg)
    local arc_bg = options and options.arc_bg or arc_fg_darker or "#006666"
+   local device_type = options and options.device_type or "sink"
+
+   local pulse_device = ""
+
+   if device_type == "sink" then
+     pulse_device = { "sink", "SINK" }
+   elseif device_type == "source" then
+     pulse_device = { "source", "SOURCE" }
+   end
+
+   local get_vol_cmd =  "pactl get-%s-volume @DEFAULT_%s@ "
+   local get_mute_cmd = " pactl get-%s-mute @DEFAULT_%s@"
+   local set_vol_cmd =  "pactl set-%s-volume @DEFAULT_%s@ "
+   local set_mute_cmd = "pactl set-%s-mute @DEFAULT_%s@ "
 
    local widget = wibox.widget.imagebox()
    local state = {
@@ -153,8 +157,14 @@ function sound.new(options)
       width = options and options.arc_width or 5,
       color_mute = { gears.color.parse_color(arc_mute) },
       color_fg = { gears.color.parse_color(arc_fg) },
-      color_bg = { gears.color.parse_color(arc_bg) }
+      color_bg = { gears.color.parse_color(arc_bg) },
+      device = pulse_device,
+      get_vol_cmd  = string.format(get_vol_cmd,  pulse_device[1], pulse_device[2]),
+      get_mute_cmd = string.format(get_mute_cmd, pulse_device[1], pulse_device[2]),
+      set_vol_cmd  = string.format(set_vol_cmd,  pulse_device[1], pulse_device[2]),
+      set_mute_cmd = string.format(set_mute_cmd, pulse_device[1], pulse_device[2])
    }
+
 
    widget.set_volume = function (self, val, delta)
       local volume = state.volume
@@ -163,17 +173,13 @@ function sound.new(options)
       elseif delta == "-" then
          volume = math.max(0, volume - val)
       end
-      if state.sink then
-         update_state(state, pread("pactl set-sink-volume " .. state.sink .. " " .. volume .. "%; pacmd list-sinks"))
-      end
+      update_state(state, pread( state.set_vol_cmd .. volume .. "% ; " .. state.get_vol_cmd))
       update_icon(self, state)
    end
 
    widget.toggle_mute = function(self)
       local setting = state.mute and "no" or "yes"
-      if state.sink then
-         update_state(state, pread("pactl set-sink-mute " .. state.sink .. " " .. setting .. "; pacmd list-sinks"))
-      end
+      update_state(state, pread( state.set_mute_cmd .. setting .. " ; " .. state.get_mute_cmd))
       update_icon(self, state)
    end
 

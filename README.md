@@ -52,6 +52,7 @@ Variable | Description | Type | Default Value
 `arc_fg` | foreground color of the icon arc | string (hex) | "#00ffff"
 `arc_bg` | background color of the icon arc | string (hex) | "#006666"
 `arc_mute` | color of the icon arc when mute | string (hex) | "#ff0000"
+`device_type` | choose type of pulse device to control (sink or source) | string | "sink"
 
 note: if you set arc_fg but not arc_bg a 60% darker shade of the arc_fg color will be calculated and used for arc_bg
 
